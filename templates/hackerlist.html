@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Hackers at Dojo & their skills</h2>
+
+<style>
+.log td {border-bottom:1px solid #ccc; border-right:1px solid #ccc; font-size:12px; padding:2px}
+table.log {border-left:1px solid #ccc; border-top:1px solid #ccc; margin-top:0}
+.log .header {font-weight:bold;}
+h3 {margin-top:3em}
+.bad {background:#fdd}
+#header h2 {display:none;}
+</style>
+
+<table class="log" width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr class="header">
+  <td width="35%">Hacker</td>
+  <td>Skills</td>
+</tr>
+
+{% for u in hackers_list %}  
+  <tr>
+    <td>{{ u }}</td>
+    <td>Hello, World!</td>
+  </tr>
+{% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Grep Hacker</title>
+    <link href="/static/css/style.css" type="text/css" rel="stylesheet" />
+    <link href="/static/css/jquery-ui/jquery.ui.autocomplete.custom.css" rel="stylesheet" type="text/css"  />
+    <link rel="stylesheet" type="text/css" href="/static/css/jqcloud.css" />
+    <script src="/static/js/jquery/jquery-1.4.2.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/js/jquery-ui/jquery-ui-1.8.core-and-interactions.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/js/jquery-ui/jquery-ui-1.8.autocomplete.min.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/jqcloud-0.1.2.js"></script>
+  </head>
+  <body>
+    <div id="top">
+      <div>
+        <a href="/">Home</a> | <a href="/profile">My Skills</a> | <a href="/hackerlist">grep .* *</a> | <a href="{{logout_url}}">Logout</a>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="header">
+        <img src="/static/dojo_icon.png" style="float: left; " />
+        <h1>Hacker Dojo</h1>
+      </div>
+      <div id="content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </body>
+</html>

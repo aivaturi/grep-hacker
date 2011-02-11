@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+label {font-weight:bold}
+</style>
+
+<h2>Your Skills</h2>
+
+<table style="margin:0">
+
+  <tr>
+    
+    <td>
+      <img height="80" width="80" src="{{ gravatar_url }}" style="margin:12px; border:1px solid black" />
+    </td>
+    
+    <td>
+      <br>{{ hacker }}
+    </td>
+  
+  </tr>
+</table>
+<p>
+  {% if not skill_set %}
+    Common don't be modest, list all your uber skill set below - the Dojo community needs you.
+  {% endif %}
+</p>
+<script>
+  $(document).ready(function(){
+      $("#mytags").tagit({
+          mySkillTags: {{ my_skill_tags }},
+          availableTags: ["c++", "java", "php", "coldfusion", "javascript", "asp", "ruby", "python", "c", "scala", "groovy", "haskell", "perl"]
+      });
+  });
+  
+  function tagsCSV(){
+    var tags = "";
+    $('ul.tagit').children(".tagit-choice").each(function(i){
+        n = $(this).children("input").val();
+        if (tags){
+            tags = tags + "," + n;
+        }
+        else{
+            tags = n;
+        }
+    })
+    return tags;
+  }
+  
+  function submitForm() {
+    document.tagsForm.tags_csv.value = tagsCSV();
+    document.tagsForm.submit();
+  }
+</script>
+<script src="/static/js/tag-it.js" type="text/javascript" charset="utf-8"></script>
+<div id="content">
+  <form class="tagForm" name="tagsForm" method="post">
+    <div class="line">
+        <label for="tags">Skills</label>
+        <ul id="mytags">{{ skill_tags_markup }}</ul>
+        <input type="hidden" name="tags_csv" value="">
+        <input type="button" value="Save Tags" onclick="submitForm()">
+    </div>
+  </form>
+</div>
+
+{% endblock %}

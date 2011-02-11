@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<script type="text/javascript">
+  function submitForm() {
+    if (document.search.search_for.value != "Enter Skills...") {
+      document.search.submit();	  
+	}
+	else
+	{
+	  $('div.error_container').text("Try entering a skill...");
+	}
+  }
+</script>
+<form action="/" name="search" method="post">
+<div style="font-size: large; margin-left: 100px;">
+  <input size=50 type="text" name="search_for" value="Enter Skills..." onfocus="if (this.value == 'Enter Skills...') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Enter Skills...';}" />
+  <input type="button" value="Find Hacker(s)" onclick="submitForm()"/>
+  <div style="color:red; font-size: small;" class="error_container"></div>
+</div>
+</form>
+
+{% if search_req %}
+<div style="font-size: large; margin-left: 100px;">
+  <p>
+	Hackers that may help you with <b>"{{ search_tag }}"</b>:
+  </p>
+</div>
+{% else %}
+  <script type="text/javascript">
+      var word_list = new Array(
+		  {{ skill_tags_list }}
+      );
+      $(document).ready(function() {
+        $("#wordcloud").jQCloud(word_list);
+      });
+    </script>
+  <div id="wordcloud" style="width: 800px; height: 400px;"></div>
+{% endif %}
+
+{% endblock %}
