@@ -12,17 +12,6 @@ import logging
 import base64
 import sys
 
-APP_NAME = 'grep-hacker'
-EMAIL_FROM = "Dojo Hackers <no-reply@%s.appspotmail.com>" % APP_NAME
-DAYS_FOR_KEY = 30
-
-try:
-    is_dev = os.environ['SERVER_SOFTWARE'].startswith('Dev')
-except:
-    is_dev = False
-
-is_prod = not is_dev
-
 def fetch_usernames(use_cache=True):
     usernames = memcache.get('usernames')
     if usernames and use_cache:
@@ -33,7 +22,11 @@ def fetch_usernames(use_cache=True):
             usernames = [m.lower() for m in simplejson.loads(resp.content)]
             skills_dict = {}
             for username in usernames:
-                skills_dict[username] = []
+                account = HackerSkills.all().filter('username =', username).get()
+                if (not account):
+                    skills_dict[username] = []
+                else:
+                    skills_dict[username] = account.skills
             if not memcache.set('usernames', skills_dict, 3600*24):
                 logging.error("Memcache set failed.")
             return usernames
@@ -97,21 +90,13 @@ class MainHandler(webapp.RequestHandler):
             self.redirect(users.create_login_url(self.request.uri))
 
 class MailHandler(webapp.RequestHandler):
-    def get(self, hash):
-        member = HackerSkills.all().filter('hash =', hash).get()
-        if member:
-            if self.request.query_string == 'email':
-                spreedly_url = member.spreedly_url()
-                mail.send_mail(sender=EMAIL_FROM,
-                    to="%s <%s>" % (member.full_name(), member.email),
-                    subject="Welcome to Hacker Dojo, %s!" % member.first_name,
-                    body=template.render('templates/welcome.txt', locals()))
-                self.redirect(self.request.path)
-            else:
-                success_html = urlfetch.fetch("http://hackerdojo.pbworks.com/api_v2/op/GetPage/page/SubscriptionSuccess/_type/html").content
-                success_html = success_html.replace('joining!', 'joining, %s!' % member.first_name)
-                is_prod = not is_dev
-                self.response.out.write(template.render('templates/success.html', locals()))
+    def get(self, username_to):
+        user = users.get_current_user()
+        mail.send_mail(sender=user+"@hackerdojo.com",
+            to="<%s>" % (username_to+"@hackerdojo.com"),
+            subject="%s is requesting your help" % user+"@hackerdojo.com",
+            body=user + " thinks that you might be to able to help him/her. Wanna help?")
+        self.redirect("/")
 
 class HackerListHandler(webapp.RequestHandler):
     def get(self):
@@ -188,6 +173,7 @@ def main():
         ('/', MainHandler),
         ('/hackerlist', HackerListHandler),
         ('/profile', ProfileHandler),
+        ('/contact', MailHandler),
         ('/.*', PageNotFound),
         ], debug=True)
     wsgiref.handlers.CGIHandler().run(application)
