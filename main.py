@@ -8,6 +8,7 @@ from django.utils import simplejson
 from pprint import pprint
 from datetime import datetime, date, time
 from collections import defaultdict
+from sets import Set
 import logging
 import base64
 import sys
@@ -29,15 +30,19 @@ def fetch_usernames(use_cache=True):
                     skills_dict[username] = account.skills
             if not memcache.set('usernames', skills_dict, 3600*24):
                 logging.error("Memcache set failed.")
-            return usernames
+        return usernames
 
-def weighted_tags():
-    ret = None
+def fetch_usernames_dict():
     usernames_dict = memcache.get('usernames')
-    
     if (not usernames_dict):
         fetch_usernames()
         usernames_dict = memcache.get('usernames')
+    
+    return usernames_dict
+
+def weighted_tags():
+    ret = None
+    usernames_dict = fetch_usernames_dict()
     
     if (usernames_dict):
         tags = []
@@ -49,6 +54,34 @@ def weighted_tags():
         ret = d.items()
         
     return ret
+
+def available_tags():
+    avail_tags = memcache.get('available_tags')
+    if avail_tags:
+        return avail_tags
+    else:
+        usernames_dict = fetch_usernames_dict()
+        if (usernames_dict):
+            tags = []
+            for username in usernames_dict:
+                tags += usernames_dict[username]
+            set = Set(tags)
+            if not memcache.set('available_tags', list(set), 3600*24):
+                logging.error("Memcache set failed.")
+            return list(set)
+
+def available_tags_str():
+    avail_tags = available_tags()
+    tags_list = ""
+    if (len(avail_tags) > 1):
+        tags_list = "["
+        for tag in avail_tags:
+          tags_list += "\""+tag+"\","
+        tags_list = tags_list.rstrip(",")
+        tags_list += "]"
+    else:
+        tags_list = "[\"c++\", \"java\", \"php\", \"coldfusion\", \"javascript\", \"asp\", \"ruby\", \"python\", \"c\", \"scala\", \"groovy\", \"haskell\", \"perl\"]"
+    return tags_list
 
 class HackerSkills(db.Expando):
     first_name = db.StringProperty()
@@ -72,6 +105,7 @@ class MainHandler(webapp.RequestHandler):
                 for k,v in w_tags:
                     skill_tags_list += "{text: \"" + k + "\", weight: " + str(v) + "},\n"
             skill_tags_list = skill_tags_list.rstrip(",\n")
+            tags_list = available_tags_str()
             self.response.out.write(template.render('templates/main.html', locals()))
         else:
             self.redirect(users.create_login_url(self.request.uri), locals())
@@ -85,52 +119,61 @@ class MainHandler(webapp.RequestHandler):
             search_req = None
             if (search_tag):
                 search_req = 1
+            tags_list = available_tags_str()
             self.response.out.write(template.render('templates/main.html', locals()))
         else:
             self.redirect(users.create_login_url(self.request.uri))
 
 class MailHandler(webapp.RequestHandler):
-    def get(self, username_to):
-        user = users.get_current_user()
+    def get(self):
+        username_to = self.request.get('to')
+        user = users.get_current_user().nickname()
         mail.send_mail(sender=user+"@hackerdojo.com",
             to="<%s>" % (username_to+"@hackerdojo.com"),
-            subject="%s is requesting your help" % user+"@hackerdojo.com",
-            body=user + " thinks that you might be to able to help him/her. Wanna help?")
+            subject="%s is requesting your help" % (user+"@hackerdojo.com"),
+            body= "%s thinks that you might be to able to help him/her. Wanna help?" % (user))
         self.redirect("/")
 
 class HackerListHandler(webapp.RequestHandler):
     def get(self):
-      user = users.get_current_user()
-      if not user:
-        self.redirect(users.create_login_url(self.request.uri))
-      logout_url = users.create_logout_url('/')
-      hackers_list = fetch_usernames();
-      self.response.out.write(template.render('templates/hackerlist.html', locals()))
+        user = users.get_current_user()
+        if not user:
+            self.redirect(users.create_login_url(self.request.uri))
+        logout_url = users.create_logout_url('/')
+        usernames_dict = fetch_usernames_dict()
+        rows = []
+        for k in usernames_dict:
+            v = "N/A"
+            if (usernames_dict[k]):
+                v = usernames_dict[k]
+            rows.append("<tr><td>" + k + "</td><td>" + v + "</td><td><a href='/contact?to=" + k + "'>ping</a></td></tr>")
+        self.response.out.write(template.render('templates/hackerlist.html', locals()))
 
 class ProfileHandler(webapp.RequestHandler):
     def get(self):
         user = users.get_current_user()
         if not user:
-          self.redirect(users.create_login_url(self.request.uri))
+            self.redirect(users.create_login_url(self.request.uri))
         else:
-          logout_url = users.create_logout_url('/')
-          hacker = user.nickname()
-          account = HackerSkills.all().filter('username =', hacker).get()
-          if (not account):
-              # If we already don't have a record of the user, create it
-              hs = HackerSkills(username=hacker)
-              hs.put()
-              account = HackerSkills.all().filter('username =', hacker).get()
-              account.skills = []
-              account.put()
-          email = hacker + "@hackerdojo.com"
-          gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower()).hexdigest()
-          if (account.skills):
-            skill_set = ', '.join(account.skills)
-          else:
-            skill_set = []
-          my_skill_tags = self._genSkillTags(account.skills)
-          self.response.out.write(template.render('templates/profile.html', locals()))
+            logout_url = users.create_logout_url('/')
+            hacker = user.nickname()
+            account = HackerSkills.all().filter('username =', hacker).get()
+            if (not account):
+                # If we already don't have a record of the user, create it
+                hs = HackerSkills(username=hacker)
+                hs.put()
+                account = HackerSkills.all().filter('username =', hacker).get()
+                account.skills = []
+                account.put()
+            email = hacker + "@hackerdojo.com"
+            gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(email.lower()).hexdigest()
+            if (account.skills):
+                skill_set = ', '.join(account.skills)
+            else:
+                skill_set = []
+            my_skill_tags = self._genSkillTags(account.skills)
+            tags_list = available_tags_str()
+            self.response.out.write(template.render('templates/profile.html', locals()))
           
     def post(self):
         skill_tags = self.request.get('tags_csv').split(',')
@@ -153,6 +196,7 @@ class ProfileHandler(webapp.RequestHandler):
             else:
                 skill_set = []
             my_skill_tags = self._genSkillTags(account.skills)
+            tags_list = available_tags_str()
             self.response.out.write(template.render('templates/profile.html', locals()))
     
     def _genSkillTags(self, skill_set):
