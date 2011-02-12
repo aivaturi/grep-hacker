@@ -16,13 +16,11 @@ h3 {margin-top:3em}
 <tr class="header">
   <td width="35%">Hacker</td>
   <td>Skills</td>
+  <td>Ping hacker</td>
 </tr>
 
-{% for u in hackers_list %}  
-  <tr>
-    <td>{{ u }}</td>
-    <td>Hello, World!</td>
-  </tr>
+{% for row in rows %}
+  {{ row }}
 {% endfor %}
 </table>
 
