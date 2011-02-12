@@ -145,7 +145,7 @@ class HackerListHandler(webapp.RequestHandler):
         for k in usernames_dict:
             v = "N/A"
             if (usernames_dict[k]):
-                v = usernames_dict[k]
+                v = ",".join(usernames_dict[k])
             rows.append("<tr><td>" + k + "</td><td>" + v + "</td><td><a href='/contact?to=" + k + "'>ping</a></td></tr>")
         self.response.out.write(template.render('templates/hackerlist.html', locals()))
 
