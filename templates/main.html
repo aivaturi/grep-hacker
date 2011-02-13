@@ -13,6 +13,7 @@
 </script>
 <form action="/" name="search" method="post">
 <div style="font-size: large; margin-left: 100px;">
+  <input type="hidden" name="search_req" value="1">
   <input size=50 type="text" name="search_for" value="Enter Skills..." onfocus="if (this.value == 'Enter Skills...') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Enter Skills...';}" />
   <input type="button" value="Find Hacker(s)" onclick="submitForm()"/>
   <div style="color:red; font-size: small;" class="error_container"></div>
@@ -23,6 +24,11 @@
 <div style="font-size: large; margin-left: 100px;">
   <p>
 	Hackers that may help you with <b>"{{ search_tag }}"</b>:
+	<p>
+	  {% for user in match_users %}
+		<a href='/contact?to={{ user }}'>{{ user }}</a><br/>
+	  {% endfor %}
+	</p>
   </p>
 </div>
 {% else %}

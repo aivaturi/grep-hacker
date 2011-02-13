@@ -14,6 +14,10 @@ import base64
 import sys
 
 def fetch_usernames(use_cache=True):
+    """
+    Grabs all the usernames from http://domain.hackerdojo.com/users and creates
+    a dictionary with each usernames' skills & stores it in memcache.
+    """
     usernames = memcache.get('usernames')
     if usernames and use_cache:
         return usernames
@@ -33,6 +37,10 @@ def fetch_usernames(use_cache=True):
         return usernames
 
 def fetch_usernames_dict():
+    """
+    This method should be used by all the other methods. It will also call the
+    fetch_usernames if there is no memcached entry for usernames.
+    """
     usernames_dict = memcache.get('usernames')
     if (not usernames_dict):
         fetch_usernames()
@@ -41,6 +49,10 @@ def fetch_usernames_dict():
     return usernames_dict
 
 def weighted_tags():
+    """
+    This is used to generate a weigthed tags entry for jQcloud to generate a
+    tag cloud on the main page.
+    """
     ret = None
     usernames_dict = fetch_usernames_dict()
     
@@ -56,6 +68,9 @@ def weighted_tags():
     return ret
 
 def available_tags():
+    """
+    Returns all the *unique* available tags to be used for autocomplete.
+    """
     avail_tags = memcache.get('available_tags')
     if avail_tags:
         return avail_tags
@@ -71,6 +86,9 @@ def available_tags():
             return list(set)
 
 def available_tags_str():
+    """
+    It will generate the "javascript" array to be used by autocomplete.
+    """
     avail_tags = available_tags()
     tags_list = ""
     if (len(avail_tags) > 1):
@@ -95,6 +113,9 @@ class HackerSkills(db.Expando):
         return '%s %s' % (self.first_name, self.last_name)
     
 class MainHandler(webapp.RequestHandler):
+    """
+    Generates the first page the end user sees with the tag cloud
+    """
     def get(self):
         user = users.get_current_user()
         if user:
@@ -111,15 +132,23 @@ class MainHandler(webapp.RequestHandler):
             self.redirect(users.create_login_url(self.request.uri), locals())
 
     def post(self):
+        """
+        Performs a very simple search through all the lists of skills & returns
+        an array of users that match. Note that the search is case sensitive &
+        as of this moment this might not be the most ideal as user has to search
+        with right case - should be improved
+        """
         user = users.get_current_user()
         logout_url = users.create_logout_url('/')
-        #id = str(m.key().id())
         if user:
             search_tag = self.request.get('search_for')
-            search_req = None
-            if (search_tag):
-                search_req = 1
-            tags_list = available_tags_str()
+            search_req = self.request.get('search_req')
+            usernames_dict = fetch_usernames_dict()
+            match_users = []
+            for username in usernames_dict:
+                if (search_tag in usernames_dict[username]):
+                    match_users.append(username)
+            logging.info(match_users)
             self.response.out.write(template.render('templates/main.html', locals()))
         else:
             self.redirect(users.create_login_url(self.request.uri))
@@ -135,6 +164,9 @@ class MailHandler(webapp.RequestHandler):
         self.redirect("/")
 
 class HackerListHandler(webapp.RequestHandler):
+    """
+    Generates a list of all the users & their skills in a tabular format
+    """
     def get(self):
         user = users.get_current_user()
         if not user:
@@ -150,6 +182,11 @@ class HackerListHandler(webapp.RequestHandler):
         self.response.out.write(template.render('templates/hackerlist.html', locals()))
 
 class ProfileHandler(webapp.RequestHandler):
+    """
+    Allows use to manage their skills tags, has some autocomplete support
+    built in
+    """
+    
     def get(self):
         user = users.get_current_user()
         if not user:
