@@ -1,11 +1,5 @@
-This was supposed to be a "Hello World" app in Python for GAE. I wrote this to
-learn python & GAE envronment at the same time. Even though the initial idea was
-simple, it evolved in to something more than just simple. Regardless, it is not a
-complex app and is very much usable. I used Hacker Dojo (http://hackerdojo.com) as
-an example site (in fact they need something like this anyway).
+This GAE app allows you to list your skill set & search for others with particular skill set. Say you want to find a person that could help you with Scala project & if there is someone who is in the system with those listed skill set, it will show up in your search. This was supposed to be a "Hello World" app in Python for GAE. I wrote this to learn python & GAE envronment at the same time. Even though the initial idea was simple, it evolved in to something more than just simple. Regardless, it is not a complex app and is very much usable. I used Hacker Dojo (http://hackerdojo.com) as an example site (in fact they need something like this anyway). Most of the features need to be "polished" to have production system. For e.g. search is very lacking & needs to be improved.
 
-It touches various aspects of GAE like datastores, memcache, url fetch etc. It
-uses jQcloud (https://github.com/DukeLeNoir/jQCloud) to generate tag cloud &
-tag-it Jquery plugin (http://plugins.jquery.com/project/tag-it) - although I
-modified it tiny bit to fit my purpose.
+It touches various aspects of GAE like datastores, memcache, url fetch etc. It uses jQcloud (https://github.com/DukeLeNoir/jQCloud) to generate tag cloud &
+tag-it Jquery plugin (http://plugins.jquery.com/project/tag-it) - although I modified it tiny bit to fit my purpose.
 
